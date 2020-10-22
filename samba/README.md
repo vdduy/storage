@@ -45,13 +45,13 @@ vi /etc/samba/smb.conf
     
 The options have the following meanings:
 
-    [users] and [josh] - The names of the shares that you will use when logging in.
-    path - The path to the share.
-    browseable - Whether the share should be listed in the available shares list. By setting to no other users will not be able to see the share.
-    read only - Whether the users specified in the valid users list are able to write to this share.
-    force create mode - Sets the permissions for the newly created files in this share.
-    force directory mode - Sets the permissions for the newly created directories in this share.
-    valid users - A list of users and groups that are allowed to access the share. Groups are prefixed with the @ symbol.
+   - [users] and [josh] - The names of the shares that you will use when logging in.
+   - path - The path to the share.
+   - browseable - Whether the share should be listed in the available shares list. By setting to no other users will not be able to see the share.
+   - read only - Whether the users specified in the valid users list are able to write to this share.
+   - force create mode - Sets the permissions for the newly created files in this share.
+   - force directory mode - Sets the permissions for the newly created directories in this share.
+   - valid users - A list of users and groups that are allowed to access the share. Groups are prefixed with the @ symbol.
 
 ```
 systemctl restart smb.service; systemctl restart nmb.service
