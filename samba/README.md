@@ -3,6 +3,7 @@ Install samba on Centos 7
 ```
 systemctl disable --now firewalld
 setenforce 0
+sed -i s/SELINUX=enforcing/SELINUX=disabled/g /etc/selinux/config
 ```
 ```
 yum install -y samba samba-client
