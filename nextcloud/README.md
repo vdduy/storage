@@ -3,23 +3,24 @@ Install Nextcloud 20
 setenforce 0
 sed -i 's/^SELINUX=.*/SELINUX=permissive/g' /etc/selinux/config
 
-yum install epel-release
+yum install epel-release -y
 
-yum -y install nginx
+yum install nginx -y
 
 systemctl enable --now nginx
 
 #Install PHP7.2
-yum install http://rpms.remirepo.net/enterprise/remi-release-7.rpm
-yum install yum-utils
+
+yum install -y http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+yum install yum-utils -y
 yum-config-manager --enable remi-php72
 
-yum update
-yum install php72
-yum install php72-php-fpm php72-php-gd php72-php-json php72-php-mbstring php72-php-mysqlnd php72-php-xml php72-php-xmlrpc php72-php-opcache
+yum update -y
+
+yum install php72 php72-php-fpm php72-php-pecl-zip php72-php-gd php72-php-json php72-php-mbstring php72-php-mysqlnd php72-php-xml php72-php-xmlrpc php72-php-opcache -y
 
 
-php --version
+php72 --version
 
 php72 --modules
 
@@ -56,11 +57,12 @@ systemctl enable --now mariadb
 
 mysql_secure_installation
 
-
-create database nextcloud_db;
-create user nextclouduser@localhost identified by 'nextclouduser@';
-grant all privileges on nextcloud_db.* to nextclouduser@localhost identified by 'nextclouduser@';
-flush privileges;
+mysql -u root
+CREATE USER 'nextcloud'@'localhost' IDENTIFIED BY "nextcloud";
+CREATE DATABASE nextcloud;
+GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextcloud'@'localhost';
+FLUSH PRIVILEGES;
+QUIT
 
 
 mkdir -p /etc/nginx/cert/
@@ -89,7 +91,7 @@ mkdir -p nextcloud/data/
 chown nginx:nginx -R nextcloud/
 
 cd /etc/nginx/conf.d/
-vim nextcloud.conf
+vi nextcloud.conf
 
 
 ```
@@ -100,14 +102,14 @@ upstream php-handler {
  
 server {
     listen 80;
-    server_name cloud.nextcloud.co;
+    server_name 192.168.10.110;
     # enforce https
     return 301 https://$server_name$request_uri;
 }
  
 server {
     listen 443 ssl;
-    server_name cloud.nextcloud.co;
+    server_name 192.168.10.110;
  
     ssl_certificate /etc/nginx/cert/nextcloud.crt;
     ssl_certificate_key /etc/nginx/cert/nextcloud.key;
