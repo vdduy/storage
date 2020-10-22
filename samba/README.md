@@ -1,6 +1,11 @@
 Install samba on Centos 7
 
-yum install samba samba-client
+
+systemctl disable --now firewalld
+setenforce 0
+
+
+yum install -y samba samba-client
 
 systemctl enable --now smb.service
 systemctl enable --now nmb.service
@@ -32,16 +37,9 @@ vi /etc/samba/smb.conf
     read only = no
     force create mode = 0660
     force directory mode = 2770
-    valid users = @sambashare @sadmin
+    valid users = @sambashare
 
-[josh]
-    path = /samba/josh
-    browseable = no
-    read only = no
-    force create mode = 0660
-    force directory mode = 2770
-    valid users = josh @sadmin
-    
+
     
 The options have the following meanings:
 
@@ -53,7 +51,6 @@ The options have the following meanings:
     force directory mode - Sets the permissions for the newly created directories in this share.
     valid users - A list of users and groups that are allowed to access the share. Groups are prefixed with the @ symbol.
     
-systemctl restart smb.service
-systemctl restart nmb.service
+systemctl restart smb.service; systemctl restart nmb.service
 
 
