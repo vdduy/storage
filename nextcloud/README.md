@@ -195,6 +195,7 @@ server {
     }
 }
 
+source:https://docs.nextcloud.com/server/20/admin_manual/installation/nginx.html
 
 
 mkdir -p /etc/nginx/cert/
