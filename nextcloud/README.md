@@ -1,46 +1,80 @@
+# Cài đặt Nextcloud 20 (Php72 Nginx MariaDB) trên Centos 7
+
+# Chuẩn bị
+Cập nhật
+```
 yum update -y
+```
+Cài EPEL repo
+```
 yum install epel-release -y
+```
+Trong bài lab này thay vì cấu hình SELinux và Firewalld thì mình sẽ disable.
+```
 systemctl disable --now firewalld
+setenforce 0
 sed -i s/SELINUX=enforcing/SELINUX=disabled/g /etc/selinux/config
+reboot
+```
+
+# Cài đặt MariaDB
+```
 yum install mariadb-server -y
 systemctl enable --now mariadb.service
 mysql_secure_installation
+```
+
+# Cài đặt Nginx
+```
 yum install nginx -y
 systemctl enable --now nginx.service
+```
 
+# Cài đặt PHP-fpm
+```
 yum install http://rpms.remirepo.net/enterprise/remi-release-7.rpm
 yum install yum-utils
 yum-config-manager --enable remi-php72
 yum update
 yum install php php-mysqlnd php-fpm php-opcache php-gd php-xml php-mbstring php-common php-json php-curl php-zip php-bz2 php-intl
-
+```
+Cấu hình php-fpm, mặc định là apache.
+```
 vi /etc/php-fpm.d/www.conf
 ...
 user = nginx
 group = nginx
-
+```
+```
 systemctl enable --now php-fpm.service
+```
 
-
+Tải source code nextcloud
+```
 yum install wget unzip -y
-
+cd /tmp/
 wget https://download.nextcloud.com/server/releases/nextcloud-20.0.0.zip
-
+```
+```
 unzip nextcloud-20.0.0.zip -d /usr/share/nginx/
-
+```
+```
 chown -R nginx:nginx /usr/share/nginx/nextcloud
 chgrp -R nginx /var/lib/php/{opcache,session,wsdlcache}
+```
 
-
+Tạo Database cho Nextcloud, user là nextcloud, password là nextcloud
+```
 mysql -u root
 CREATE DATABASE nextcloud DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 CREATE USER nextcloud@localhost IDENTIFIED BY 'nextcloud';
 GRANT ALL PRIVILEGES ON nextcloud.* TO nextcloud@localhost;
 FLUSH PRIVILEGES;
 EXIT;
+```
 
-
-
+Tạo file nextcloud.conf. Thay domain name và đường dẫn ssl sao cho phù hợp. 
+```
 vi /etc/nginx/conf.d/nextcloud.conf
 upstream php-handler {
     server 127.0.0.1:9000;
@@ -194,18 +228,25 @@ server {
         try_files $uri $uri/ /index.php$request_uri;
     }
 }
+```
 
 source:https://docs.nextcloud.com/server/20/admin_manual/installation/nginx.html
 
-
+Nếu không có SSL thì có thể tự generate local ssl.
+```
 mkdir -p /etc/nginx/cert/
 openssl req -new -x509 -days 365 -nodes -out /etc/nginx/cert/nextcloud.crt -keyout /etc/nginx/cert/nextcloud.key
 chmod 700 /etc/nginx/cert
 chmod 600 /etc/nginx/cert/*
+```
 
+```
 systemctl restart nginx.service
+```
 
-
+Tạo thư mục chứa data người dùng.
+```
 mkdir /data
 chown nginx. /data/
-   
+```
+Sau khi hoàn tất thì có thể truy cập vào nextcloud server bằng browser để tiến hành cài đặt.
