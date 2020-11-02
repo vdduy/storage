@@ -250,3 +250,21 @@ mkdir /data
 chown nginx. /data/
 ```
 Sau khi hoàn tất thì có thể truy cập vào nextcloud server bằng browser để tiến hành cài đặt.
+
+----------
+Error when assembling chunks, status code 504
+Tăng thời gian timeout để Nextcloud join file sau khi upload xong.
+Sửa file /etc/nginx/nginx.conf
+Insert các dòng sau trong tab http
+
+```
+vi /etc/nginx/nginx.conf
+...
+fastcgi_connect_timeout 60;
+fastcgi_send_timeout 1800;
+fastcgi_read_timeout 1800;
+```
+
+This allows up to 30 mins of time to pass. It probably doesn't need to be quite that high, but it all depends on how fast your server disk I/O is.
+
+It'd be great if a future version of Nextcloud had a daemon to handle this kind of task out-of-proc (like Seafile does), since larger files are becoming pretty normal.
