@@ -49,6 +49,59 @@ group = nginx
 systemctl enable --now php-fpm.service
 ```
 
+Chỉnh sửa file /etc/my.cnf 
+```
+[server]
+skip_name_resolve = 1
+innodb_buffer_pool_size = 128M
+innodb_buffer_pool_instances = 1
+innodb_flush_log_at_trx_commit = 2
+innodb_log_buffer_size = 32M
+innodb_max_dirty_pages_pct = 90
+query_cache_type = 1
+query_cache_limit = 2M
+query_cache_min_res_unit = 2k
+query_cache_size = 64M
+tmp_table_size= 64M
+max_heap_table_size= 64M
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/slow.log
+long_query_time = 1
+
+[client]
+default-character-set = utf8mb4
+
+[mysqld]
+character_set_server = utf8mb4
+collation_server = utf8mb4_general_ci
+transaction_isolation = READ-COMMITTED
+binlog_format = ROW
+innodb_large_prefix=on
+innodb_file_format=barracuda
+innodb_file_per_table=1
+innodb_buffer_pool_size=1G
+innodb_io_capacity=4000
+innodb_large_prefix=true
+
+datadir=/var/lib/mysql
+socket=/var/lib/mysql/mysql.sock
+# Disabling symbolic-links is recommended to prevent assorted security risks
+symbolic-links=0
+# Settings user and group are ignored when systemd is used.
+# If you need to run mysqld under a different user or group,
+# customize your systemd unit file for mariadb according to the
+# instructions in http://fedoraproject.org/wiki/Systemd
+
+[mysqld_safe]
+log-error=/var/log/mariadb/mariadb.log
+pid-file=/var/run/mariadb/mariadb.pid
+
+#
+# include all files from the config directory
+#
+!includedir /etc/my.cnf.d
+```
+
 Tải source code nextcloud
 ```
 yum install wget unzip -y
