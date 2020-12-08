@@ -36,7 +36,7 @@ yum install http://rpms.remirepo.net/enterprise/remi-release-7.rpm
 yum install yum-utils
 yum-config-manager --enable remi-php72
 yum update
-yum install php php-mysqlnd php-fpm php-opcache php-gd php-xml php-mbstring php-common php-json php-curl php-zip php-bz2 php-intl
+yum install php php-mysqlnd php-fpm php-opcache php-gd php-xml php-mbstring php-common php-json php-curl php-zip php-bz2 php-intl php-proccess php-bcmath php-gmp php-imagick
 ```
 Cấu hình php-fpm, mặc định là apache.
 ```
