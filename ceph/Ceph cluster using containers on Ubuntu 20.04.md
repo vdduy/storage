@@ -235,3 +235,69 @@ Inferring config /var/lib/ceph/d945961c-8250-11eb-9395-dfaac60d0015/mon.ceph-mon
 Using recent ceph image docker.io/ceph/ceph:v15
 No OSD remove/replace operations reported
 ```
+
+Create Rados Gateway daemons.
+```
+cephadm install ceph-common
+radosgw-admin realm create --rgw-realm=default --default
+radosgw-admin zonegroup create --rgw-zonegroup=default --master --default
+radosgw-admin zone create --rgw-zonegroup=default --rgw-zone=us-east-1 --master --default
+ceph orch apply rgw default us-east-1 --placement="3 ceph-mon01 ceph-mon02 ceph-mon03"
+```
+
+  
+Create user admin for dashboard.
+```
+root@ceph-mon01:~# radosgw-admin user create --uid="admin" --display-name="admin" --system
+{
+    "user_id": "admin",
+    "display_name": "admin",
+    "email": "",
+    "suspended": 0,
+    "max_buckets": 1000,
+    "subusers": [],
+    "keys": [
+        {
+            "user": "admin",
+            "access_key": "50LM0WBLEHDZTE8QXO4S",
+            "secret_key": "DBUdECL5eMoYcS2m2dk60ZOBsRHwta3g1o1HDcBC"
+        }
+    ],
+    "swift_keys": [],
+    "caps": [],
+    "op_mask": "read, write, delete",
+    "system": "true",
+    "default_placement": "",
+    "default_storage_class": "",
+    "placement_tags": [],
+    "bucket_quota": {
+        "enabled": false,
+        "check_on_raw": false,
+        "max_size": -1,
+        "max_size_kb": 0,
+        "max_objects": -1
+    },
+    "user_quota": {
+        "enabled": false,
+        "check_on_raw": false,
+        "max_size": -1,
+        "max_size_kb": 0,
+        "max_objects": -1
+    },
+    "temp_url_keys": [],
+    "type": "rgw",
+    "mfa_ids": []
+}
+```
+Set access-key and secret-key for dashboard.
+```
+ceph dashboard set-rgw-api-access-key 50LM0WBLEHDZTE8QXO4S
+ceph dashboard set-rgw-api-secret-key DBUdECL5eMoYcS2m2dk60ZOBsRHwta3g1o1HDcBC
+ceph dashboard set-rgw-api-ssl-verify False
+ceph dashboard set-rgw-api-user-id admin
+```
+
+```
+root@ceph-mon01:~# curl http://ceph-mon01
+<?xml version="1.0" encoding="UTF-8"?><ListAllMyBucketsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Owner><ID>anonymous</ID><DisplayName></DisplayName></Owner><Buckets></Buckets></ListAllMyBucketsResult>
+```
