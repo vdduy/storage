@@ -190,6 +190,10 @@ Inferring config /var/lib/ceph/d945961c-8250-11eb-9395-dfaac60d0015/mon.ceph-mon
 Using recent ceph image docker.io/ceph/ceph:v15
 Created osd(s) 0 on host 'ceph-osd01'
 ```
+Or we can add all osd that are available.
+```
+ceph orch apply osd --all-available-devices
+```
 Check containers on ceph-osd01
 ```
 podman ps
@@ -301,3 +305,103 @@ ceph dashboard set-rgw-api-user-id admin
 root@ceph-mon01:~# curl http://ceph-mon01
 <?xml version="1.0" encoding="UTF-8"?><ListAllMyBucketsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Owner><ID>anonymous</ID><DisplayName></DisplayName></Owner><Buckets></Buckets></ListAllMyBucketsResult>
 ```
+```
+sudo tee /etc/sysctl.d/ceph-rgw.conf<<EOF
+net.ipv4.ip_forward = 1
+net.ipv4.ip_nonlocal_bind = 1
+EOF
+sudo sysctl --system
+```
+**Config Keepalived and HAProxy for Kubernetes API**
+We need to deploy keepalived and HAProxy on k8s-master01, k8s-master02 and k8s-master03
+```
+sudo apt install -y keepalived haproxy
+```
+Keepalived Config
+```
+sudo vi /etc/keepalived/keepalived.conf
+global_defs {
+    router_id LVS_DEVEL
+}
+vrrp_script check_apiserver {
+  script "/etc/keepalived/check_apiserver.sh"
+  interval 3
+  weight -2
+  fall 10
+  rise 2
+}
+
+vrrp_instance VI_1 {
+    state [MASTER/BACKUP]
+    interface ens160
+    virtual_router_id 51
+    priority [101/100] #101 for master and 100 for slave
+    authentication {
+        auth_type PASS
+        auth_pass 1234567890 #your pass
+    }
+    virtual_ipaddress {
+        172.16.14.110
+    }
+    track_script {
+        check_apiserver
+    }
+}
+```
+```
+sudo vi /etc/keepalived/check_apiserver.sh
+#!/bin/sh
+
+errorExit() {
+    echo "*** $*" 1>&2
+    exit 1
+}
+
+curl --silent --max-time 2 --insecure http://localhost:80/ -o /dev/null || errorExit "Error GET http://localhost:80/"
+if ip addr | grep -q 172.16.14.100; then
+    curl --silent --max-time 2 --insecure http://172.16.14.100:80/ -o /dev/null || errorExit "Error GET http://172.16.14.100:80/"
+fi
+```
+Add the following config in haproxy.cfg
+```
+sudo vi /etc/haproxy/haproxy.cfg 
+...
+
+#---------------------------------------------------------------------
+# Configure HAProxy for Kubernetes API Server
+#---------------------------------------------------------------------
+listen stats
+  bind    172.16.14.110:9000
+  mode    http
+  stats   enable
+  stats   hide-version
+  stats   uri       /stats
+  stats   refresh   30s
+  stats   realm     Haproxy\ Statistics
+  stats   auth      Admin:Password
+
+
+############## Configure HAProxy Secure Frontend #############
+frontend rgw-http-proxy
+    bind 172.16.14.110:8080
+    mode tcp
+    tcp-request inspect-delay 5s
+    default_backend rgw-http
+
+############## Configure HAProxy SecureBackend #############
+backend rgw-http
+    balance roundrobin
+    mode tcp
+    option tcp-check
+    default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100
+    server ceph-mon01 172.16.14.111:80 check
+    server ceph-mon02 172.16.14.112:80 check
+    server ceph-mon03 172.16.14.113:80 check
+```                                                               
+
+```
+sudo systemctl enable haproxy --now
+sudo systemctl enable keepalived --now
+```
+
+
