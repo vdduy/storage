@@ -305,6 +305,9 @@ ceph dashboard set-rgw-api-user-id admin
 root@ceph-mon01:~# curl http://ceph-mon01
 <?xml version="1.0" encoding="UTF-8"?><ListAllMyBucketsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Owner><ID>anonymous</ID><DisplayName></DisplayName></Owner><Buckets></Buckets></ListAllMyBucketsResult>
 ```
+
+**Config Keepalived and HAProxy for Kubernetes API**
+We need to deploy keepalived and HAProxy on k8s-master01, k8s-master02 and k8s-master03
 ```
 sudo tee /etc/sysctl.d/ceph-rgw.conf<<EOF
 net.ipv4.ip_forward = 1
@@ -312,8 +315,6 @@ net.ipv4.ip_nonlocal_bind = 1
 EOF
 sudo sysctl --system
 ```
-**Config Keepalived and HAProxy for Kubernetes API**
-We need to deploy keepalived and HAProxy on k8s-master01, k8s-master02 and k8s-master03
 ```
 sudo apt install -y keepalived haproxy
 ```
@@ -381,14 +382,14 @@ listen stats
   stats   auth      Admin:Password
 
 
-############## Configure HAProxy Secure Frontend #############
+############## Configure HAProxy Frontend #############
 frontend rgw-http-proxy
     bind 172.16.14.110:8080
     mode tcp
     tcp-request inspect-delay 5s
     default_backend rgw-http
 
-############## Configure HAProxy SecureBackend #############
+############## Configure HAProxy Backend #############
 backend rgw-http
     balance roundrobin
     mode tcp
@@ -403,5 +404,3 @@ backend rgw-http
 sudo systemctl enable haproxy --now
 sudo systemctl enable keepalived --now
 ```
-
-
